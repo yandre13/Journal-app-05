@@ -23,16 +23,21 @@ import {
 } from './actions/notes'
 import loadNotes from 'helpers/loadNotes'
 import { fileUpload } from 'helpers/fileUpload'
+
 const auth = firebase.auth()
 
+export const authSelector = (state) => state.auth
+export const notesSelector = (state) => state.notes
+
 //Auth
-function* genLogin(email, password) {
+export function* sagaLogin(email, password) {
 	try {
 		const { user } = yield call(
 			[auth, auth.signInWithEmailAndPassword],
 			email,
 			password
 		)
+		console.log(user)
 		yield put(login(user.uid, user.displayName))
 		yield put(finishLoading())
 	} catch (e) {
@@ -41,13 +46,15 @@ function* genLogin(email, password) {
 		Swal.fire('error', e.message, 'error')
 	}
 }
-function* sagaLogin() {
-	const {
-		payload: { email, password },
-	} = yield take(TYPES.AUTH_LOGIN_ASYNC)
-	yield call(genLogin, email, password)
+export function* watcherLogin() {
+	while (true) {
+		const {
+			payload: { email, password },
+		} = yield take(TYPES.AUTH_LOGIN_ASYNC)
+		yield call(sagaLogin, email, password)
+	}
 }
-function* genGoogleAuth() {
+function* sagaGoogleAuth() {
 	try {
 		const { user } = yield call([auth, auth.signInWithPopup], authProvider)
 		console.log(user)
@@ -57,10 +64,10 @@ function* genGoogleAuth() {
 		Swal.fire('error', e.message, 'error')
 	}
 }
-function* sagaGoogleAuth() {
-	yield takeEvery(TYPES.AUTH_GOOGLE_SIGN_IN, genGoogleAuth)
+function* watcherGoogleAuth() {
+	yield takeEvery(TYPES.AUTH_GOOGLE_SIGN_IN, sagaGoogleAuth)
 }
-function* genRegister(name, email, password) {
+function* sagaRegister(name, email, password) {
 	try {
 		const { user } = yield call(
 			[auth, auth.createUserWithEmailAndPassword],
@@ -74,13 +81,15 @@ function* genRegister(name, email, password) {
 		Swal.fire('error', e.message, 'error')
 	}
 }
-function* sagaRegister() {
-	const {
-		payload: { name, email, password },
-	} = yield take(TYPES.AUTH_REGISTER)
-	yield call(genRegister, name, email, password)
+function* watcherRegister() {
+	while (true) {
+		const {
+			payload: { name, email, password },
+		} = yield take(TYPES.AUTH_REGISTER)
+		yield call(sagaRegister, name, email, password)
+	}
 }
-function* genLogout() {
+export function* sagaLogout() {
 	try {
 		const res = yield call([auth, auth.signOut])
 		console.log(res)
@@ -90,43 +99,44 @@ function* genLogout() {
 		console.log(e)
 	}
 }
-function* sagaLogout() {
-	yield takeEvery(TYPES.AUTH_LOGOUT_ASYNC, genLogout)
+function* watcherLogout() {
+	yield takeEvery(TYPES.AUTH_LOGOUT_ASYNC, sagaLogout)
 }
 //
 
 //Notes
 
-function* genStartAddEntry() {
-	const { uid } = yield select((state) => state.auth)
-	const newEntry = {
-		title: '',
-		body: '',
-		date: new Date().getTime(),
-	}
-
-	const doc = yield db.collection(`${uid}/journal/notes`).add(newEntry)
+export function* sagaStartAddEntry(newEntry) {
+	const { uid } = yield select(authSelector)
+	console.log(uid)
+	const path = `${uid}/journal/notes`
+	const collectionRef = db.collection(path)
+	const doc = yield call([collectionRef, collectionRef.add], newEntry)
 	console.log(doc)
 	yield put(activeNote(doc.id, newEntry))
 	yield put(addEntry(doc.id, newEntry))
 }
 
-function* sagaAddEntry() {
-	yield takeEvery(TYPES.NOTES_START_ADD_ENTRY, genStartAddEntry)
+function* watcherAddEntry() {
+	while (true) {
+		const { payload } = yield take(TYPES.NOTES_START_ADD_ENTRY)
+		yield call(sagaStartAddEntry, payload)
+	}
 }
 
-function* genLoadingEntries() {
-	const { uid } = yield select((state) => state.auth)
+export function* sagaLoadingEntries() {
+	const { uid } = yield select(authSelector)
+
 	const notes = yield call(loadNotes, uid)
 	yield put(setNotes(notes))
 }
-function* sagaLoadingEntries() {
-	yield takeEvery(TYPES.NOTES_START_LOADING_ENTRIES, genLoadingEntries)
+function* watcherLoadingEntries() {
+	yield takeEvery(TYPES.NOTES_START_LOADING_ENTRIES, sagaLoadingEntries)
 }
 
-function* genSaveNote(note) {
+export function* sagaSaveNote(note) {
 	try {
-		const { uid } = yield select((state) => state.auth)
+		const { uid } = yield select(authSelector)
 
 		if (!note.url) {
 			delete note.url
@@ -134,7 +144,8 @@ function* genSaveNote(note) {
 
 		const noteToFirestore = { ...note }
 		delete noteToFirestore.id
-		yield db.doc(`${uid}/journal/notes/${note.id}`).update(noteToFirestore)
+		const docRef = db.doc(`${uid}/journal/notes/${note.id}`)
+		yield call([docRef, docRef.update], noteToFirestore)
 		yield put(refreshNote(note.id, noteToFirestore))
 		Swal.fire('Saved', note.title, 'success')
 	} catch (e) {
@@ -143,41 +154,42 @@ function* genSaveNote(note) {
 	}
 }
 
-function* sagaSaveNote() {
+function* watcherSaveNote() {
 	while (true) {
 		const { payload } = yield take(TYPES.NOTES_START_UPDATING)
-
-		yield call(genSaveNote, payload)
+		yield call(sagaSaveNote, payload)
 	}
 }
 
-function* genUploadPicture(file) {
+export function* sagaUploadPicture(file) {
 	try {
-		const { active } = yield select((state) => state.notes)
+		const { active } = yield select(notesSelector)
 		Swal.fire({
 			title: 'Loading...',
 			text: 'please wait',
 			allowOutsideClick: false,
 			onBeforeOpen: () => Swal.showLoading(),
 		})
+		console.log(active)
 		const url = yield call(fileUpload, file)
 		active.url = url
+		console.log(active)
 		yield put(startSaveNote(active))
 	} catch (e) {
 		console.log(e)
 	}
 }
 
-function* sagaUploadPicture() {
+function* watcherUploadPicture() {
 	while (true) {
 		const { payload } = yield take(TYPES.NOTES_START_UPLOADING_IMG)
-		yield call(genUploadPicture, payload)
+		yield call(sagaUploadPicture, payload)
 	}
 }
 
-function* genStartDeleting(id) {
+function* sagaStartDeleting(id) {
 	try {
-		const { uid } = yield select((state) => state.auth)
+		const { uid } = yield select(authSelector)
 		yield db.doc(`${uid}/journal/notes/${id}`).delete()
 		yield put(deleteNote(id))
 	} catch (e) {
@@ -185,24 +197,24 @@ function* genStartDeleting(id) {
 	}
 }
 
-function* sagaStartDeleting() {
+function* watcherStartDeleting() {
 	while (true) {
 		const { payload } = yield take(TYPES.NOTES_START_DELETING)
-		yield call(genStartDeleting, payload)
+		yield call(sagaStartDeleting, payload)
 	}
 }
 
 export function* rootSaga() {
 	yield all([
-		fork(sagaLogin),
-		fork(sagaGoogleAuth),
-		fork(sagaRegister),
-		fork(sagaLogout),
+		fork(watcherLogin),
+		fork(watcherGoogleAuth),
+		fork(watcherRegister),
+		fork(watcherLogout),
 		//
-		fork(sagaAddEntry),
-		fork(sagaLoadingEntries),
-		fork(sagaSaveNote),
-		fork(sagaUploadPicture),
-		fork(sagaStartDeleting),
+		fork(watcherAddEntry),
+		fork(watcherLoadingEntries),
+		fork(watcherSaveNote),
+		fork(watcherUploadPicture),
+		fork(watcherStartDeleting),
 	])
 }

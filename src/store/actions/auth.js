@@ -1,7 +1,7 @@
 import { TYPES } from 'store/types'
 
 /**
- * @param {string} uid
+ * @param {string | number} uid
  * @param {string} displayName
  * @returns {{type: string, payload: object}} action
  */

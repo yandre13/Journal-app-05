@@ -1,6 +1,9 @@
 import { TYPES } from 'store/types'
 
-export const startAddEntry = () => ({ type: TYPES.NOTES_START_ADD_ENTRY })
+export const startAddEntry = (entry) => ({
+	type: TYPES.NOTES_START_ADD_ENTRY,
+	payload: entry,
+})
 
 export const addEntry = (id, note) => ({
 	type: TYPES.NOTES_ADD_ENTRY,

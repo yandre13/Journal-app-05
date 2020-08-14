@@ -1,0 +1,27 @@
+{
+	"parserOptions": {
+		"ecmaVersion": 2020,
+		"sourceType": "module",
+		"ecmaFeatures": {
+			"jsx": true
+		}
+	},
+	"plugins": ["jest-dom", "testing-library"],
+	"rules": {
+		"jest-dom/prefer-checked": "error",
+		"jest-dom/prefer-enabled-disabled": "error",
+		"jest-dom/prefer-required": "error",
+		"jest-dom/prefer-to-have-attribute": "error",
+		"testing-library/await-async-query": "error",
+		"testing-library/no-await-sync-query": "error",
+		"testing-library/no-debug": "warn",
+		"testing-library/no-manual-cleanup": "warn",
+		"testing-library/no-wait-for-empty-callback": "error",
+		"testing-library/prefer-explicit-assert": "warn",
+		"testing-library/prefer-find-by": "warn",
+		"testing-library/prefer-presence-queries": "warn",
+		"testing-library/prefer-screen-queries": "warn",
+		"testing-library/prefer-wait-for": "warn"
+	},
+	"extends": ["plugin:jest-dom/recommended", "plugin:testing-library/react"]
+}

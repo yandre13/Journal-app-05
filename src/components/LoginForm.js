@@ -2,17 +2,16 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useDispatch, useSelector } from 'react-redux'
-import { googleSingIn, loginAsync } from 'store/actions/auth'
+import { googleSingIn } from 'store/actions/auth'
 import { yupResolver } from '@hookform/resolvers'
 import * as yup from 'yup'
-import { startLoading } from 'store/actions/ui'
 
 const schema = yup.object().shape({
 	email: yup.string().required().email().min(6),
 	password: yup.string().required().min(8),
 })
 
-const LoginForm = () => {
+const LoginForm = ({ onSubmit }) => {
 	const { register, errors, handleSubmit } = useForm({
 		defaultValues: {
 			email: 'kyomi@beta.pe',
@@ -22,16 +21,10 @@ const LoginForm = () => {
 	})
 	const dispatch = useDispatch()
 	const { loading } = useSelector((state) => state.ui)
-	const onSubmit = (data) => {
-		const { email, password } = data
-		dispatch(startLoading())
-		dispatch(loginAsync(email, password))
-	}
 
 	const handleGoogleSignIn = () => {
 		dispatch(googleSingIn())
 	}
-
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
 			<input
@@ -60,7 +53,11 @@ const LoginForm = () => {
 
 			<div className="auth__social-networks">
 				<p>Login with social networks</p>
-				<div className="google-btn" onClick={handleGoogleSignIn}>
+				<div
+					aria-label="googleButton"
+					className="google-btn"
+					onClick={handleGoogleSignIn}
+				>
 					<div className="google-icon-wrapper">
 						<img
 							className="google-icon"
@@ -73,7 +70,7 @@ const LoginForm = () => {
 					</p>
 				</div>
 			</div>
-			<Link to="auth/register">Create a new account</Link>
+			<Link to="/auth/register">Create a new account</Link>
 		</form>
 	)
 }

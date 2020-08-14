@@ -3,6 +3,7 @@ import JournalEntries from './JournalEntries'
 import { useDispatch, useSelector } from 'react-redux'
 import { logoutAsync } from 'store/actions/auth'
 import { startAddEntry } from 'store/actions/notes'
+import { createEntry } from 'helpers/createEntry'
 
 const Sidebar = () => {
 	const dispatch = useDispatch()
@@ -11,7 +12,7 @@ const Sidebar = () => {
 		dispatch(logoutAsync())
 	}
 	const handleAddEntry = () => {
-		dispatch(startAddEntry())
+		dispatch(startAddEntry(createEntry()))
 	}
 
 	return (
@@ -25,7 +26,11 @@ const Sidebar = () => {
 					Logout
 				</button>
 			</div>
-			<div className="journal__new-entry" onClick={handleAddEntry}>
+			<div
+				aria-label="new entry"
+				className="journal__new-entry"
+				onClick={handleAddEntry}
+			>
 				<i className="far fa-calendar-plus fa-5x"></i>
 				<p className="mt-5">New entry</p>
 			</div>

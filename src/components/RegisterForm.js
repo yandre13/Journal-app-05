@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers'
 import * as yup from 'yup'
-import { useDispatch } from 'react-redux'
-import { registerEmail } from 'store/actions/auth'
+
 const initialValues = {
 	name: '',
 	email: '',
@@ -22,17 +21,11 @@ const schema = yup.object().shape({
 		.oneOf([yup.ref('password')]),
 })
 
-const RegisterForm = () => {
-	const dispatch = useDispatch()
+const RegisterForm = ({ onSubmit }) => {
 	const { handleSubmit, errors, register } = useForm({
 		defaultValues: initialValues,
 		resolver: yupResolver(schema),
 	})
-
-	const onSubmit = (data) => {
-		const { name, email, password } = data
-		dispatch(registerEmail(name, email, password))
-	}
 
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>

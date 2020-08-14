@@ -11,7 +11,11 @@ const JournalEntry = ({ id, title, date, body, url }) => {
 		dispatch(activeNote(id, note))
 	}
 	return (
-		<div className="journal___entry pointer" onClick={handleClickEntry}>
+		<div
+			aria-label="journal entry"
+			className="journal___entry pointer"
+			onClick={handleClickEntry}
+		>
 			{url && (
 				<div
 					className="journal___entry-picture"

@@ -8,8 +8,9 @@ export const fileUpload = async (file) => {
 	try {
 		const res = await fetch(url, { method: 'POST', body: form })
 		const json = await res.json()
-		return json.secure_url
+		return json.secure_url || null
 	} catch (e) {
 		console.log(e)
+		throw e
 	}
 }
